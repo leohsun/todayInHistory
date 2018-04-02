@@ -94,8 +94,6 @@ const sleep = (time, cb) => {
             }).catch(err => console.error(err))
 
         }
-
-
         //开始爬取
         const finished = await getDetailIterator().catch(err => console.error(err))
         if (finished) {
