@@ -20,7 +20,7 @@ const sleep = (time, cb) => {
 }
 (async () => {
     const host = 'http://www.lssdjt.com/'
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']});
     const page = await browser.newPage();
     fetchTheDay()
     async function fetchTheDay() {
@@ -69,7 +69,8 @@ const sleep = (time, cb) => {
             return fetchTheDay()
         }
 
-        async function getDetailIterator() {
+        //爬取列表中的每一项
+        async function getDetail() {
             return new Promise((res, rej) => {
                 let i = 0
                 const len = list.length
@@ -94,15 +95,7 @@ const sleep = (time, cb) => {
             }).catch(err => console.error(err))
 
         }
-        //开始爬取
-        const finished = await getDetailIterator().catch(err => console.error(err))
-        if (finished) {
-            console.log()
-            await promisify(writeFile)(resolve(__dirname, `./${month}-${day}.json`), JSON.stringify(list), 'utf-8')
-            await sleep(10000, _ => console.log(`获取 ${month} 月 ${day} 日的数据结束。休息10秒,准备获取${month} 月 ${++day}的数据`))
-            fetchTheDay()
-
-        }
+       
         //循环列表 爬下级
         async function fetchDetail(url) {
             try {
@@ -113,8 +106,7 @@ const sleep = (time, cb) => {
                     console.log('爬取详情页开始')
                     const detail = await page.evaluate(async () => {
                         const $ = window.jQuery
-                        if(!$) return {content:'详情访问出错 后期添加'}
-        
+                        if(!$) return {content:'详情访问出错 后期添加'}       
                         const el = $('.view')
                         const date = $('.view>h2').text().replace(/^(\d+)年(\d+)月(\d+)日\s+\(([\u4e00-\u9fa5]+)\)/, '$1-$2-$3-$4').split('-')
                         const year = Number(date[0])
@@ -223,6 +215,14 @@ const sleep = (time, cb) => {
             }
         }
 
+         //开始爬取
+         const finished = await getDetailIterator().catch(err => console.error(err))
+         if (finished) {
+             console.log()
+             await promisify(writeFile)(resolve(__dirname, `./${month}-${day}.json`), JSON.stringify(list), 'utf-8')
+             await sleep(10000, _ => console.log(`获取 ${month} 月 ${day} 日的数据结束。休息10秒,准备获取${month} 月 ${++day}的数据`))
+             fetchTheDay()
+         }
     }
 
 
